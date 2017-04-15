@@ -1,0 +1,96 @@
+# -*- coding:utf-8 -*-
+
+import urllib
+import urllib2
+import re
+from bs4 import BeautifulSoup
+import sys
+import MySQLdb
+import MySQLdb.cursors
+reload(sys)
+sys.setdefaultencoding('utf8')
+
+def gethtml(url):
+    request=urllib2.Request(url)
+    response=urllib2.urlopen(request)
+    html=response.read().decode('utf-8')
+    return html
+
+url="https://www.aqistudy.cn/historydata/monthdata.php?city=%E5%AE%89%E9%98%B3"
+html=gethtml(url)
+
+def yemianbiaoge(urlneeded):
+    user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
+    headers = { 'User-Agent' : user_agent }
+    a=[]
+    try:
+        request = urllib2.Request(urlneeded,headers = headers)
+        response = urllib2.urlopen(request)
+        content = response.read().decode('utf-8')
+        pattern = re.compile('<td.*?>(.*?)</td>',re.S)
+        items = re.findall(pattern,content)
+        i=0
+        for item in items:
+            a.append(item)
+            if i==0:
+                date=a[0]
+                print 'date:'+date
+            elif i==1:
+                 AQI=a[0]
+                 print 'AQI:'+AQI
+            elif i==2:
+                 range=a[0]
+                 print 'range:'+range
+            elif i==3 and 'div' in a[0]:
+                 pattern=re.compile(r'(?<=<div)*?(?<=>).*?(?=</div>)')
+                 itema0= re.findall(pattern,a[0])
+                 qualityrank=itema0[0]
+                 print 'qualityrank:'+qualityrank
+            elif i==4:
+                 PM25=a[0]
+                 print 'PM25'+PM25
+            elif i==5:
+                 PM10=a[0]
+                 print 'PM10'+PM10
+            elif i==6:
+                 SO2=a[0]
+                 print 'SO2'+SO2
+            elif i==7:
+                 CO=a[0]
+                 print 'CO'+CO
+            elif i==8:
+                 NO2=a[0]
+                 print  'NO2:'+NO2
+            elif i==9:
+                 O3=a[0]
+                 print 'O3:'+O3
+            elif i==10:
+                 rank=a[0]
+                 print 'rank:'+rank
+                 conn= MySQLdb.connect(host='localhost', user='root',passwd='12345', db='anyangweather', port = 3306, charset = 'utf8')
+                 cur= conn.cursor()
+                 sql="INSERT INTO anyang values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+                 cur.execute(sql,(date,AQI,range,qualityrank,PM25,PM10,SO2,CO,NO2,O3,rank))  
+                 conn.commit()  
+                 cur.close()
+                 conn.close()
+            a.pop()
+            i=i+1
+            if i==11:
+                i=0
+    except urllib2.URLError, e:
+        if hasattr(e,"code"):
+            print e.code
+        if hasattr(e,"reason"):
+            print e.reason
+        
+def pagelinkfuc(html):
+    patt=re.compile('<ul class="unstyled1">(.*?)</ul>',re.S)
+    links=re.findall(patt,html)
+    patt2=re.compile('<a href="(.*?)">.*?</a>',re.S)
+    linkssecond=re.findall(patt2,links[0])
+    for item in linkssecond:
+         pagelink='https://www.aqistudy.cn/historydata/'+str(item)
+         yemianbiaoge(pagelink)
+    return pagelink
+urlne=pagelinkfuc(html)
