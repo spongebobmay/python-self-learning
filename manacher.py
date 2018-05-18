@@ -1,3 +1,4 @@
+#最长回文字串，manacher算法实现，python2.7版本
 def longestPalindrome(s):
     """
     :type s: str
@@ -5,6 +6,7 @@ def longestPalindrome(s):
     """
     slist='#'.join(s)
     slist= '#'+slist+'#'
+    #以#字符填充字符
     index=-1
     pR=-1
     maxR=0
@@ -22,5 +24,5 @@ def longestPalindrome(s):
         maxR = max(pArr[i],maxR)
     return maxR-1
 print longestPalindrome("aabbac")
-
+#输出7
 
